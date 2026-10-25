@@ -18,9 +18,19 @@ name: Release
 #       curl -fsSL https://dream-mindv2.github.io/toolchain/install.sh | sh
 #
 # Pages must be set to deploy from GitHub Actions (Settings, Pages, Source).
+#
+# Run by hand (Actions, Release, Run workflow), it builds every platform and
+# publishes nothing: how to know a release will go through before its tag
+# is spent.
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "the version to build as, without the v (nothing is published)"
+        required: true
+        default: "0.0.0"
 
 permissions:
   contents: write
@@ -28,7 +38,7 @@ permissions:
   id-token: write
 
 env:
-  VERSION: ${{ github.ref_name }}
+  VERSION: ${{ inputs.version && format('v{0}', inputs.version) || github.ref_name }}
 
 jobs:
   linux:
@@ -73,6 +83,7 @@ jobs:
           path: dist/*.tar.gz
 
   publish:
+    if: startsWith(github.ref, 'refs/tags/')
     needs: [linux, macos, android]
     runs-on: ubuntu-24.04
     environment: github-pages
