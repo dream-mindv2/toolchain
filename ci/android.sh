@@ -4,7 +4,8 @@
 #
 # The VM is built by dream/android/build.sh -- libffi and OpenSSL as archives,
 # the interpreter (Android has no JIT yet) -- and installed, which gives it the
-# `$ORIGIN/../lib` it finds `libdream.so` and the NDK's C++ runtime by. The
+# `$ORIGIN/../lib` it finds `libdream.so` and the NDK's C++ runtime by
+# (checked below). The
 # images are portable bytecode, so they are made by a VM built for this
 # machine, which then packs the tarball for the phone.
 #
@@ -32,6 +33,13 @@ echo "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a  build/sr
 JOBS=$jobs bash dream/android/build.sh arm64-v8a build/android build/src/libffi-3.8.0 build/src/openssl-3.5.9
 cmake --install build/android/vm --prefix build/stage
 cp build/android/dist/libc++_shared.so build/stage/lib/
+# Bionic searches only its system directories and LD_LIBRARY_PATH unless the
+# binary says otherwise, and CMake's Android module once dropped the runpath
+# without a word: a phone then said `library "libdream.so" not found`.
+for f in bin/dream:'$ORIGIN/../lib' lib/libdream.so:'$ORIGIN'; do
+    readelf -d "build/stage/${f%%:*}" | grep -q "RUNPATH.*\[${f#*:}\]" ||
+        { echo "build/stage/${f%%:*} has no RUNPATH ${f#*:}" >&2; exit 1; }
+done
 
 DREAM=$root/build/host/bin/dream build/host/bin/dream build/mind pack tarball \
     --package-version "$version" --os android --arch aarch64

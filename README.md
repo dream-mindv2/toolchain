@@ -11,9 +11,12 @@ curl -fsSL https://dream-mindv2.github.io/toolchain/install.sh | sh
 ```
 
 It installs the latest toolchain into `~/.mindv2/toolchains/VERSION` (or
-`$MINDV2_HOME`), makes it the one in use, and puts it on `PATH` through
-`~/.mindv2/env`, which it adds to your shell's startup files.
-`MIND_NO_MODIFY_PATH=1` leaves those files alone and says what to add instead.
+`$MINDV2_HOME`), makes it the one in use, and links `dream` and `mind` into
+`~/.local/bin` (`$XDG_BIN_HOME`; `$PREFIX/bin` on Termux), the standard
+place for a user's programs, which most Linux distributions already have on
+`PATH`. Only where it is not -- macOS, NixOS by default -- does it add it,
+through `~/.mindv2/env` sourced from your shell's startup files (and fish's
+`conf.d`); `MIND_NO_MODIFY_PATH=1` leaves those alone and says what to add.
 The tarball is checked against the SHA-256 written into the script before
 anything is unpacked.
 
