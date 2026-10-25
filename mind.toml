@@ -1,0 +1,52 @@
+# The Dream toolchain: one release of the whole language -- the VM, the
+# compiler, mind, the language server and the standard library -- at versions
+# that belong together, as the components pinned by this repository's
+# submodules. `mind pack` makes its tarballs and its install.sh from this
+# section (mind/tool/PACKAGING.md); `mind toolchain` installs and switches
+# them (mind/tool/src/toolchain.dr).
+[package]
+name = "toolchain"
+version = "0.3.0"
+
+[ship]
+license = "MIT OR Apache-2.0"
+name = "dream"
+version = "0.3.0"
+summary = "The Dream language: its VM, compiler, build tool, language server and standard library"
+description = "Dream is a lazily evaluated functional language with green processes, a JIT,\nand a self-hosted compiler. This is one release of all of it: the VM (dream),\nthe compiler (dream -x dreams), the build tool (mind), the language server\n(dream -x lucid) and the standard library."
+maintainer = "Custards1 <blake.d.brown77@gmail.com>"
+homepage = "https://github.com/dream-mindv2/toolchain"
+url = "https://github.com/dream-mindv2/toolchain/releases/download/v{version}/{file}"
+arch = "native"
+
+[ship.installer]
+layout = "toolchain"
+
+[ship.files]
+"bin/dream" = "build/stage/bin/dream"
+"bin/mind" = "build/mind"
+"include" = "build/stage/include"
+"lib/dream/dreams.dream" = "build/dreams.dream"
+"lib/dream/lucid.dream" = "build/lucid.dream"
+"lib/dream/toolchain.toml" = "build/toolchain.toml"
+"lib/dream/std" = { src = "mind/std", exclude = ["target"] }
+"share/doc/dream/LICENSE-MIT" = "LICENSE-MIT"
+"share/doc/dream/LICENSE-APACHE" = "LICENSE-APACHE"
+
+[ship.files.linux]
+"lib/libdream.so.0.1" = "build/stage/lib/libdream.so.0.1"
+
+[ship.links.linux]
+"lib/libdream.so.0" = "libdream.so.0.1"
+"lib/libdream.so" = "libdream.so.0"
+
+[ship.files.android]
+"lib/libdream.so" = "build/stage/lib/libdream.so"
+"lib/libc++_shared.so" = "build/stage/lib/libc++_shared.so"
+
+[ship.files.macos]
+"lib/libdream.0.1.dylib" = "build/stage/lib/libdream.0.1.dylib"
+
+[ship.links.macos]
+"lib/libdream.0.dylib" = "libdream.0.1.dylib"
+"lib/libdream.dylib" = "libdream.0.dylib"

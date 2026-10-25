@@ -1,0 +1,112 @@
+name: Release
+
+# A tag `vX.Y.Z` releases the toolchain at the components its submodules pin:
+#
+# - a tarball for each platform, built where only that platform can build it
+#   (ci/linux.sh in AlmaLinux 9 on x86_64 and aarch64, ci/macos.sh on Apple
+#   silicon, ci/android.sh cross-built with the NDK for Termux), each holding
+#   a VM that needs nothing but the system's C library, with the JIT on
+#   wherever there is one (not yet on Android);
+# - SHA256SUMS of them, and toolchain.sig: that file signed, as `mind
+#   toolchain` checks it, by the key in the TOOLCHAIN_SIGNING_KEY secret (the
+#   hex seed `mind keygen` writes), whose public half `mind` is built
+#   trusting (`keys` in mind/tool/src/toolchain.dr);
+# - install.sh for the one-line install, and channel.json, the versions there
+#   are, both published on this repository's GitHub Pages:
+#
+#       curl -fsSL https://dream-mindv2.github.io/toolchain/install.sh | sh
+#
+# Pages must be set to deploy from GitHub Actions (Settings, Pages, Source).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  VERSION: ${{ github.ref_name }}
+
+jobs:
+  linux:
+    strategy:
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    container: almalinux:9
+    steps:
+      - run: dnf install -y -q git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: sh ci/linux.sh "${VERSION#v}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.runner }}
+          path: dist/*.tar.gz
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: sh ci/macos.sh "${VERSION#v}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.tar.gz
+
+  android:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME" sh ci/android.sh "${VERSION#v}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: dist/*.tar.gz
+
+  publish:
+    needs: [linux, macos, android]
+    runs-on: ubuntu-24.04
+    environment: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: the toolchain just built, to run the packager with
+        run: |
+          mkdir -p build/host
+          tar -xzf "dist/dream-${VERSION#v}-linux-x86_64.tar.gz" -C build/host --strip-components 1
+          echo "$PWD/build/host/bin" >> "$GITHUB_PATH"
+      - name: install.sh, the sums and the signature
+        env:
+          TOOLCHAIN_SIGNING_KEY: ${{ secrets.TOOLCHAIN_SIGNING_KEY }}
+        run: |
+          mind pack installer --package-version "${VERSION#v}"
+          mind pack sums
+          umask 077
+          printf '%s\n' "$TOOLCHAIN_SIGNING_KEY" > "$RUNNER_TEMP/key"
+          mind toolchain sign "$VERSION" dist/SHA256SUMS --signing-key "$RUNNER_TEMP/key"
+          rm -f "$RUNNER_TEMP/key"
+      - name: the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$VERSION" --title "Dream ${VERSION#v}" --generate-notes \
+            dist/*.tar.gz dist/SHA256SUMS dist/toolchain.sig dist/install.sh
+      - name: the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: sh ci/site.sh "${VERSION#v}"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
