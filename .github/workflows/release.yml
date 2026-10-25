@@ -8,9 +8,10 @@ name: Release
 #   a VM that needs nothing but the system's C library, with the JIT on
 #   wherever there is one (not yet on Android);
 # - SHA256SUMS of them, and toolchain.sig: that file signed, as `mind
-#   toolchain` checks it, by the key in the TOOLCHAIN_SIGNING_KEY secret (the
-#   hex seed `mind keygen` writes), whose public half `mind` is built
-#   trusting (`keys` in mind/tool/src/toolchain.dr);
+#   toolchain` checks it, by the key `mind` is built trusting (`keys` in
+#   mind/tool/src/toolchain.dr) -- here, if it is the TOOLCHAIN_SIGNING_KEY
+#   secret (the hex seed `mind keygen` writes), or afterwards on the
+#   maintainer's machine (README, "Releasing");
 # - install.sh for the one-line install, and channel.json, the versions there
 #   are, both published on this repository's GitHub Pages:
 #
@@ -92,16 +93,23 @@ jobs:
         run: |
           mind pack installer --package-version "${VERSION#v}"
           mind pack sums
-          umask 077
-          printf '%s\n' "$TOOLCHAIN_SIGNING_KEY" > "$RUNNER_TEMP/key"
-          mind toolchain sign "$VERSION" dist/SHA256SUMS --signing-key "$RUNNER_TEMP/key"
-          rm -f "$RUNNER_TEMP/key"
+          # Signed here when the key is a secret of the repository; otherwise
+          # the release goes out without toolchain.sig, and its maintainer
+          # signs the published SHA256SUMS on their own machine and uploads
+          # the signature (README, "Releasing"), so the key never leaves it.
+          # `mind toolchain install` refuses a release until it is signed.
+          if [ -n "$TOOLCHAIN_SIGNING_KEY" ]; then
+            umask 077
+            printf '%s\n' "$TOOLCHAIN_SIGNING_KEY" > "$RUNNER_TEMP/key"
+            mind toolchain sign "$VERSION" dist/SHA256SUMS --signing-key "$RUNNER_TEMP/key"
+            rm -f "$RUNNER_TEMP/key"
+          fi
       - name: the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$VERSION" --title "Dream ${VERSION#v}" --generate-notes \
-            dist/*.tar.gz dist/SHA256SUMS dist/toolchain.sig dist/install.sh
+            dist/*.tar.gz dist/SHA256SUMS dist/install.sh $(ls dist/toolchain.sig 2>/dev/null)
       - name: the site
         env:
           GH_TOKEN: ${{ github.token }}

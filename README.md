@@ -71,7 +71,17 @@ tarball, as the release does; `nix build` builds the flake's.
 ## Releasing
 
 Move the submodules to the commits the release is of, commit, and push a tag
-`vX.Y.Z`. The release workflow builds every platform, signs `SHA256SUMS` with
-the `TOOLCHAIN_SIGNING_KEY` secret (a hex seed, as `mind keygen` writes one),
-publishes the release, and updates the site: `install.sh` and `channel.json`,
-the versions `mind toolchain` offers. Pages must deploy from GitHub Actions.
+`vX.Y.Z`. The release workflow builds every platform, publishes the release,
+and updates the site: `install.sh` and `channel.json`, the versions `mind
+toolchain` offers. Pages deploys from GitHub Actions.
+
+`mind toolchain` installs only a release whose `SHA256SUMS` is signed by the
+key it trusts. With that key as the `TOOLCHAIN_SIGNING_KEY` secret (a hex
+seed, as `mind keygen` writes one) the workflow signs; without it, sign the
+published sums where the key is, and upload the signature:
+
+```sh
+gh release download vX.Y.Z -R dream-mindv2/toolchain -p SHA256SUMS -D sig
+mind toolchain sign vX.Y.Z sig/SHA256SUMS
+gh release upload vX.Y.Z -R dream-mindv2/toolchain sig/toolchain.sig
+```
