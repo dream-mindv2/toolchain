@@ -57,7 +57,7 @@ fetch https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.g
 (cd build/src && tar -xzf zstd.tar.gz && cd zstd-1.5.7/lib \
     && make -j"$jobs" libzstd.a CFLAGS='-O2 -fPIC' >/dev/null && make install-static install-includes PREFIX="$deps" >/dev/null)
 
-cmake -S . -B build/vm -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib \
+cmake -S . -B build/vm -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib -DDREAM_VERSION="$version" \
     -DDREAM_SELF_CONTAINED=ON -DDREAM_ENABLE_JIT=ON -DDREAM_LLVM_CONFIG=/usr/bin/llvm-config \
     -DDREAM_FFI_INCLUDE="$deps/include" -DDREAM_FFI_LIB="$deps/lib/libffi.a" \
     -DOPENSSL_ROOT_DIR="$deps" -DOPENSSL_USE_STATIC_LIBS=TRUE -DCMAKE_PREFIX_PATH="$deps" -DDREAM_BUILD_TESTS=OFF

@@ -30,7 +30,7 @@ echo "7da3e2d9a171eb0a038f592ecad3ff2bb2550f3496d87b3b29ad0cf4430c0db4  build/sr
 curl -fsSL https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz -o build/src/openssl.tar.gz
 echo "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a  build/src/openssl.tar.gz" | sha256sum -c - >/dev/null
 (cd build/src && tar -xzf libffi.tar.gz && tar -xzf openssl.tar.gz)
-JOBS=$jobs bash dream/android/build.sh arm64-v8a build/android build/src/libffi-3.8.0 build/src/openssl-3.5.9
+DREAM_VERSION=$version JOBS=$jobs bash dream/android/build.sh arm64-v8a build/android build/src/libffi-3.8.0 build/src/openssl-3.5.9
 cmake --install build/android/vm --prefix build/stage
 cp build/android/dist/libc++_shared.so build/stage/lib/
 # Bionic searches only its system directories and LD_LIBRARY_PATH unless the

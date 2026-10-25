@@ -15,7 +15,7 @@ llvm=$(brew --prefix llvm)
 ffi=$(brew --prefix libffi)
 ssl=$(brew --prefix openssl@3)
 
-cmake -S . -B build/vm -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib \
+cmake -S . -B build/vm -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib -DDREAM_VERSION="$version" \
     -DDREAM_SELF_CONTAINED=ON -DDREAM_ENABLE_JIT=ON -DDREAM_LLVM_CONFIG="$llvm/bin/llvm-config" \
     -DDREAM_FFI_INCLUDE="$ffi/include" -DDREAM_FFI_LIB="$ffi/lib/libffi.a" \
     -DOPENSSL_ROOT_DIR="$ssl" -DOPENSSL_USE_STATIC_LIBS=TRUE -DDREAM_BUILD_TESTS=OFF
