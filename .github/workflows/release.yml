@@ -47,8 +47,16 @@ jobs:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
     runs-on: ${{ matrix.runner }}
     container: almalinux:9
+    # A stalled mirror once held this job for minutes on its first command,
+    # and nothing would have stopped it short of GitHub's six hours.
+    timeout-minutes: 45
     steps:
-      - run: dnf install -y -q git
+      # dnf gives up on a connection that answers nothing for 30 s, or a
+      # download slower than 10 kB/s for as long, and tries another mirror:
+      # for this step and every dnf in ci/linux.sh.
+      - run: |
+          printf 'timeout=30\nminrate=10k\nretries=5\n' >> /etc/dnf/dnf.conf
+          dnf install -y -q git
       - uses: actions/checkout@v4
         with:
           submodules: recursive
