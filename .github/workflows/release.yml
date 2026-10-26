@@ -90,9 +90,28 @@ jobs:
           name: android
           path: dist/*.tar.gz
 
+  # The x86_64 tarball, unpacked and used on clean machines of three
+  # distributions before anything is published: the VM says what it is,
+  # mind doctor finds nothing broken, and a new project builds and runs.
+  smoke:
+    needs: [linux]
+    strategy:
+      matrix:
+        image: ["ubuntu:24.04", "debian:12", "fedora:41"]
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-ubuntu-24.04
+          path: dist
+      - run: sh ci/smoke.sh dist/dream-*-linux-x86_64.tar.gz
+
   publish:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [linux, macos, android]
+    needs: [linux, macos, android, smoke]
     runs-on: ubuntu-24.04
     environment: github-pages
     steps:
