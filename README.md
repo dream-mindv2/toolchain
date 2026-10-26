@@ -81,10 +81,11 @@ toolchain` offers. Pages deploys from GitHub Actions.
 `mind toolchain` installs only a release whose `SHA256SUMS` is signed by the
 key it trusts. With that key as the `TOOLCHAIN_SIGNING_KEY` secret (a hex
 seed, as `mind keygen` writes one) the workflow signs; without it, sign the
-published sums where the key is, and upload the signature:
+published sums where the key is. `ci/sign-release.sh` does that: it waits for
+the tag's build to finish, refuses unless it succeeded, then downloads
+`SHA256SUMS`, signs it and uploads `toolchain.sig`:
 
 ```sh
-gh release download vX.Y.Z -R dream-mindv2/toolchain -p SHA256SUMS -D sig
-mind toolchain sign vX.Y.Z sig/SHA256SUMS
-gh release upload vX.Y.Z -R dream-mindv2/toolchain sig/toolchain.sig
+git tag -a vX.Y.Z -m "Dream X.Y.Z" && git push origin main vX.Y.Z
+sh ci/sign-release.sh vX.Y.Z
 ```
