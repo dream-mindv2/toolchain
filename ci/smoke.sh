@@ -9,7 +9,8 @@
 # compile -- a missing standard library, a VM that will not start against an
 # older C library, a compiler it cannot find -- never becomes a release. Each
 # step is one a person takes: the VM says what it is, `mind doctor` finds
-# nothing broken, and a new project builds and runs.
+# nothing broken, a new project builds and runs, and an application with a
+# window builds from what the tarball carries, with no Emscripten anywhere.
 set -eu
 tarball=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
 work=$(mktemp -d)
@@ -37,5 +38,11 @@ cd "$work" && mind new hello >/dev/null && cd hello
 out=$(mind run 2>&1)
 printf '%s\n' "$out"
 case "$out" in *"Hello from hello"*) ;; *) echo "the new project did not run" >&2; exit 1 ;; esac
+
+step "a graphics application, on the browser VM the tarball carries"
+cp -r "$work/dream/lib/dream/std/graphics/examples/todo" "$work/todo"
+cd "$work/todo" && mind build
+image=$(ls target/*/debug/todo.dream)
+grep -aq 'graphics/dream-browser.wasm' "$image" || { echo "$image carries no browser VM" >&2; exit 1; }
 
 step "passed"

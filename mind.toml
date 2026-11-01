@@ -29,6 +29,8 @@ layout = "toolchain"
 "lib/dream/dreams.dream" = "build/dreams.dream"
 "lib/dream/lucid.dream" = "build/lucid.dream"
 "lib/dream/toolchain.toml" = "build/toolchain.toml"
+"lib/dream/browser/dream-browser.mjs" = "build/browser/dream-browser.mjs"
+"lib/dream/browser/dream-browser.wasm" = "build/browser/dream-browser.wasm"
 "lib/dream/std" = { src = "mind/std", exclude = ["target"] }
 "share/doc/dream/LICENSE-MIT" = "LICENSE-MIT"
 "share/doc/dream/LICENSE-APACHE" = "LICENSE-APACHE"

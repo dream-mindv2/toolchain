@@ -7,6 +7,9 @@ name: Release
 #   silicon, ci/android.sh cross-built with the NDK for Termux), each holding
 #   a VM that needs nothing but the system's C library, with the JIT on
 #   wherever there is one (not yet on Android);
+# - in each of them the browser VM, built once by ci/browser.sh since a wasm
+#   file is the same everywhere, so that a std.graphics application can be
+#   built with nothing but the toolchain;
 # - SHA256SUMS of them, and toolchain.sig: that file signed, as `mind
 #   toolchain` checks it, by the key `mind` is built trusting (`keys` in
 #   mind/tool/src/toolchain.dr) -- here, if it is the TOOLCHAIN_SIGNING_KEY
@@ -41,7 +44,21 @@ env:
   VERSION: ${{ inputs.version && format('v{0}', inputs.version) || github.ref_name }}
 
 jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: sh ci/browser.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: browser
+          path: build/browser/*
+
   linux:
+    needs: [browser]
     strategy:
       matrix:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
@@ -60,6 +77,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: browser
+          path: build/browser
       - run: sh ci/linux.sh "${VERSION#v}"
       - uses: actions/upload-artifact@v4
         with:
@@ -67,11 +88,16 @@ jobs:
           path: dist/*.tar.gz
 
   macos:
+    needs: [browser]
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: browser
+          path: build/browser
       - run: sh ci/macos.sh "${VERSION#v}"
       - uses: actions/upload-artifact@v4
         with:
@@ -79,11 +105,16 @@ jobs:
           path: dist/*.tar.gz
 
   android:
+    needs: [browser]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: browser
+          path: build/browser
       - run: ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME" sh ci/android.sh "${VERSION#v}"
       - uses: actions/upload-artifact@v4
         with:
@@ -120,6 +151,10 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      # Every artifact landed here, and the browser VM's are already inside
+      # the tarballs: left, they would be listed in SHA256SUMS as files of
+      # the release that the release does not have.
+      - run: rm -f dist/dream-browser.mjs dist/dream-browser.wasm
       - name: the toolchain just built, to run the packager with
         run: |
           mkdir -p build/host

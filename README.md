@@ -69,7 +69,9 @@ git clone --recurse-submodules https://github.com/dream-mindv2/toolchain
 ```
 
 `ci/linux.sh`, `ci/macos.sh` and `ci/android.sh` each build one platform's
-tarball, as the release does; `nix build` builds the flake's.
+tarball, as the release does, and each ships the browser VM `ci/browser.sh`
+builds first into `build/browser`; `nix build` builds the flake's, which has
+no browser VM.
 
 ## Releasing
 
