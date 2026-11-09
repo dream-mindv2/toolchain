@@ -37,6 +37,9 @@ layout = "toolchain"
 
 [ship.files.linux]
 "lib/libdream.so.0.1" = "build/stage/lib/libdream.so.0.1"
+# LLVM for a native `dreams`, which has no VM to ask (`std.llvm`): in the installation's `lib`,
+# where a system library is looked for first.
+"lib/dream/lib/libdream_llvm.so" = "build/stage/lib/dream/lib/libdream_llvm.so"
 
 [ship.links.linux]
 "lib/libdream.so.0" = "libdream.so.0.1"

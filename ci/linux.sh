@@ -65,7 +65,7 @@ cmake --build build/vm --parallel "$jobs"
 cmake --install build/vm --prefix build/stage
 
 # Only the C library: anything else is a library the user's system may lack.
-for f in build/stage/bin/dream build/stage/lib/libdream.so.0.1; do
+for f in build/stage/bin/dream build/stage/lib/libdream.so.0.1 build/stage/lib/dream/lib/libdream_llvm.so; do
     extra=$(ldd "$f" | awk '{print $1}' | grep -v -E '^(linux-vdso|linux-gate)\.so|^lib(c|m|dl|pthread|rt)\.so\.[0-9]+$|^/lib.*/ld-linux|^libdream\.so' || true)
     if [ -n "$extra" ]; then
         echo "$f needs libraries a user's system may not have:" >&2
